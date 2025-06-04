@@ -1,0 +1,214 @@
+
+const express = require('express');
+const app= express();
+const cors =require('cors')
+const mongoose = require('mongoose')
+const fs = require('fs')
+ const multer =require('multer');
+
+const upload = multer({ dest: 'uploads/' });
+ 
+
+app.use(cors());
+app.use(express.json())
+app.use('/upload', express.static('upload')); 
+
+require('dotenv').config();
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+
+
+mongoose.connect("mongodb://localhost:27017/subdb")
+.then(()=>{
+    console.log('connection succesful')
+})
+.catch((err)=>{
+    console.log(err,err.message)
+});
+
+ 
+const blogSchema = mongoose.Schema({
+    title:String,
+    content:String,
+    author:String,
+    category:String,
+    imageUrl: String,
+
+ },{timestamps:(true)})
+
+ 
+ 
+
+ 
+ 
+ const blogModel = mongoose.model('blogs',blogSchema)
+ const chartModel = mongoose.model('blogs',blogSchema)
+
+ 
+
+
+
+app.post('/api/post', upload.single('avatar'), (req, res) => {
+  const { title, content, author, category } = req.body;
+  const image = req.file;
+
+  if (!image) {
+    return res.status(400).json({ message: 'Image upload failed' });
+  }
+ 
+  cloudinary.uploader.upload(image.path, { folder: 'blog-images' })
+    .then(result => {
+      fs.unlink(image.path, err => {
+        if (err) console.error('Failed to delete local image:', err);
+      });
+ 
+      return blogModel.create({
+        title,
+        content,
+        author,
+        category,
+        imageUrl: result.secure_url,
+      });
+    })
+    .then(blogpost => {
+      res.status(201).json({
+        message: 'Blog post created',
+        blogpost,
+      });
+    })
+    .catch(err => {
+      console.error('Error handling blog post creation:', err);
+      res.status(500).json({ message: 'Failed to create blog post', error: err.message });
+    });
+});
+
+    
+     
+ app.get('/api/chart',(req,resp)=>{
+   
+    chartModel.aggregate([
+        { $group: { _id: "$author", postCount: { $sum: 1 } } },
+        { $sort: { postCount: -1 } }
+    ])
+    .then(result => {
+        const labels = result.map(r => r._id);
+        const data = result.map(r => r.postCount);
+        resp.json({ labels, data });
+      })
+      .catch(err => {
+        console.error('Chart data error:', err);
+        resp.status(500).json({ message: 'Error generating chart data' });
+      });
+ }) 
+ 
+app.get('/api/posts', (req, res) => {
+    blogModel.find().sort({ createdAt: -1 }).limit(4)
+      .then(posts => res.json(posts))
+      .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
+  });
+app.get('/api/posts/latest', (req, res) => {
+    blogModel.find().sort({ createdAt: -1 }).limit(1)
+      .then(posts => res.json(posts))
+      .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
+  });
+
+app.get('/api/posts/latest1', (req, res) => {
+    blogModel.find().sort({ createdAt: -1 }).skip(1).limit(1)
+      .then(posts => res.json(posts))
+      .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
+  });
+  
+app.get('/api/posts/latest2', (req, res) => {
+    blogModel.find().sort({ createdAt: -1 }).skip(3).limit(1)
+      .then(posts => res.json(posts))
+      .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
+  })
+  
+app.get('/api/posts/trending', (req, res) => {
+    blogModel.find().sort({ createdAt: -1 }).skip(3).limit(1)
+      .then(posts => res.json(posts))
+      .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
+  });
+  
+
+  app.get('/api/post/:id', (req, res) => {
+    const { id } = req.params;
+  
+    blogModel.findById(id)
+      .then(post => {
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+        res.json(post);
+      })
+      .catch(err => {
+        console.error('Fetch post error:', err);
+        res.status(500).json({ message: 'Error fetching post' });
+      });
+  });
+  function escapeRegex(input) {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  app.get('/api/:category', (req, res) => { 
+    const category = escapeRegex( req.params.category);
+
+    blogModel.find({category:{$regex:category,$options: 'i'}})
+
+      .then(post => {
+        if (!post) {
+          return res.status(404).json({ message: 'Post not found' });
+        }
+        res.json(post);
+      })
+      .catch(err => {
+        console.error('Fetch post error:', err);
+        res.status(500).json({ message: 'Error fetching post' });
+      });
+  });
+  
+  function escapeRegex(input) {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+app.get('/search/:title',(req,resp)=>{
+    //  let title=req.params.title
+     const title = escapeRegex(req.params.title);
+      
+    blogModel.find({title:{$regex:title,$options: 'i'}})
+    .then((data)=>{
+        
+            resp.send(data)
+        })
+        
+        
+        .catch((err)=>{
+            console.log(err)
+        })
+    
+})
+  
+// In backend (e.g., routes/posts.js or directly in index.js)
+app.get('/api/category/:category', (req, res) => {
+  const category = req.params.category;
+
+  blogModel.find({ category })  // assuming your schema has a `category` field
+    .then(posts => {
+      if (!posts.length) {
+        return res.status(404).json({ message: 'No posts found for this category' });
+      }
+      res.json(posts);
+    })
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+    });
+});
+
+
+
+app.listen(5000,()=>{
+    console.log('app running on port 5000')
+}); 
