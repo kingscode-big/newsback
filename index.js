@@ -9,7 +9,11 @@ const fs = require('fs')
 const upload = multer({ dest: 'uploads/' });
  
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://newslight.netlify.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json())
 app.use('/upload', express.static('upload')); 
 
@@ -24,13 +28,11 @@ cloudinary.config({
 
 
 
-mongoose.connect("mongodb://localhost:27017/subdb")
-.then(()=>{
-    console.log('connection succesful')
-})
-.catch((err)=>{
-    console.log(err,err.message)
-});
+ console.log('Mongo URI:', process.env.MONGO_URI);
+
+ mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB Atlas'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
  
 const blogSchema = mongoose.Schema({
