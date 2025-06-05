@@ -9,11 +9,19 @@ const fs = require('fs')
 const upload = multer({ dest: 'uploads/' });
  
 
+const allowedOrigins = ['https://newslight.netlify.app', 'http://localhost:5174'];
+
 app.use(cors({
-    origin: 'https://newslight.netlify.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: function(origin, callback) {
+    if(!origin) return callback(null, true); // allow non-browser tools like Postman
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
 }));
+
 app.use(express.json())
 app.use('/upload', express.static('upload')); 
 
