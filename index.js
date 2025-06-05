@@ -9,7 +9,7 @@ const fs = require('fs')
 const upload = multer({ dest: 'uploads/' });
  
 
-const allowedOrigins = ['https://newslight.netlify.app', 'http://localhost:5174'];
+const allowedOrigins = ['https://newslight.netlify.app','https://adminpa.netlify.app', 'http://localhost:5174'];
 
 app.use(cors({
   origin: function(origin, callback) {
