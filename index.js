@@ -52,11 +52,17 @@ const blogSchema = mongoose.Schema({
 
  },{timestamps:(true)})
 
+ const commentSChema = mongoose.Schema({
+  postId: String,
+  username: String,
+  comment: String,
+ },{timestamps:(true)})
+
  
  
 
  
- 
+ const commentModel =mongoose.model('comments',commentSChema)
  const blogModel = mongoose.model('blogs',blogSchema)
  const chartModel = mongoose.model('blogs',blogSchema)
 
@@ -216,6 +222,21 @@ app.get('/api/category/:category', (req, res) => {
       res.status(500).json({ message: 'Server error' });
     });
 });
+
+app.post('/comments',(req,resp)=>{
+  const {postId, username,comment} =req.body
+  console.log(req.body)
+  commentModel.create({ postId, username, comment})
+   .then(newComment => resp.status(201).json(newComment))
+    .catch(err => resp.status(500).json({ message: 'Error adding comment' }));
+   
+})
+app.get('/comments/:postId',(req,resp)=>{
+   commentModel.find({postId:req.params.postId})
+   .sort({ createdAt: -1 })
+    .then(comments => resp.json(comments))
+    .catch(err => resp.status(500).json({ message: 'Error fetching comments' }));
+})
 
 
 
