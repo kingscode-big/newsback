@@ -4,7 +4,9 @@ const app= express();
 const cors =require('cors')
 const mongoose = require('mongoose')
 const fs = require('fs')
- const multer =require('multer');
+const multer =require('multer');
+const { count } = require('console');
+const router = express.Router();
 
 const upload = multer({ dest: 'uploads/' });
  
@@ -23,6 +25,7 @@ app.use(cors({
 }));
 
 app.use(express.json())
+
 app.use('/upload', express.static('upload')); 
 
 require('dotenv').config();
@@ -58,6 +61,14 @@ const blogSchema = mongoose.Schema({
   comment: String,
  },{timestamps:(true)})
 
+ const visitorSchema = mongoose.Schema({
+  count:{
+      type: Number,
+    default: 0
+  }
+ })
+
+
  
  
 
@@ -66,6 +77,7 @@ const blogSchema = mongoose.Schema({
  const blogModel = mongoose.model('blogs',blogSchema)
  const chartModel = mongoose.model('blogs',blogSchema)
 
+ const visitorModel = mongoose.model('visitors',visitorSchema)
  
 
 
@@ -238,6 +250,23 @@ app.get('/comments/:postId',(req,resp)=>{
     .catch(err => resp.status(500).json({ message: 'Error fetching comments' }));
 })
 
+
+// logical for the visitors
+
+ app.get('/visitors', (req, res) => {
+  visitorModel.updateOne({}, { $inc: { count: 1 } }, { upsert: true })
+    .then((visitor) => {
+      return visitor.findOne();
+    })
+    .then(visitor => {
+      res.send(`Visitor count: ${visitor.count}`);
+    })
+    .catch(err => {
+      console.error('Error counting visitor:', err);
+      res.status(500).send('Server error');
+    });
+});
+ 
 
 
 app.listen(5000,()=>{
