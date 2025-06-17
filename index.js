@@ -255,11 +255,11 @@ app.get('/comments/:postId',(req,resp)=>{
 
  app.get('/visitors', (req, res) => {
   visitorModel.updateOne({}, { $inc: { count: 1 } }, { upsert: true })
-    .then((visitor) => {
-      return visitor.findOne();
+    .then(() => {
+      return visitorModel.findOne();
     })
     .then(visitor => {
-      res.send(`Visitor count: ${visitor.count}`);
+   res.json({ count: visitor.count });
     })
     .catch(err => {
       console.error('Error counting visitor:', err);
