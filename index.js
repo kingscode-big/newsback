@@ -136,7 +136,7 @@ app.post('/api/post', upload.single('avatar'), (req, res) => {
  }) 
  
 app.get('/api/posts', (req, res) => {
-    blogModel.find().sort({ createdAt: -1 })
+    blogModel.find().sort({ createdAt: -1 }).limit(3)
       .then(posts => res.json(posts))
       .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
   });
@@ -147,19 +147,19 @@ app.get('/api/posts/latest', (req, res) => {
   });
 
 app.get('/api/posts/latest1', (req, res) => {
-    blogModel.find().sort({ createdAt: -1 }).skip(1).limit(1)
+    blogModel.find().sort({ createdAt: -1 })
       .then(posts => res.json(posts))
       .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
   });
   
 app.get('/api/posts/latest2', (req, res) => {
-    blogModel.find().sort({ createdAt: -1 }).skip(3).limit(1)
+    blogModel.find().sort({ createdAt: -1 }) 
       .then(posts => res.json(posts))
       .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
   })
   
 app.get('/api/posts/trending', (req, res) => {
-    blogModel.find().sort({ createdAt: -1 }).skip(3).limit(1)
+    blogModel.find().sort({ createdAt: -1 })
       .then(posts => res.json(posts))
       .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
   });
