@@ -64,7 +64,7 @@ const blogSchema = mongoose.Schema({
  const visitorSchema = mongoose.Schema({
   count:{
       type: Number,
-    default: 0
+       default: 0
   }
  })
 
@@ -136,7 +136,7 @@ app.post('/api/post', upload.single('avatar'), (req, res) => {
  }) 
  
 app.get('/api/posts', (req, res) => {
-    blogModel.find().sort({ createdAt: -1 }).limit(4)
+    blogModel.find().sort({ createdAt: -1 })
       .then(posts => res.json(posts))
       .catch(err => res.status(500).json({ message: 'Error fetching posts' }));
   });
@@ -259,6 +259,9 @@ app.get('/comments/:postId',(req,resp)=>{
       return visitorModel.findOne();
     })
     .then(visitor => {
+       if (!visitor) {
+        return res.status(404).json({ error: 'No visitor record found.' });
+      }
    res.json({ count: visitor.count });
     })
     .catch(err => {
